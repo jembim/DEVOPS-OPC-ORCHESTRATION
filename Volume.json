@@ -1,0 +1,23 @@
+{
+    "user": "/Compute-{{ identity_domain }}/{{ opc_username }}",
+    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Storage",
+    "description": "Orchestration Plan for Storages",
+    "oplans": [
+        {
+            "label": "Storage",
+            "obj_type": "storage/volume",
+            "ha_policy": "monitor",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/BootStorageSN2",
+                    "description" : "Bootable Storage",
+                    "properties" : [ "/oracle/public/storage/default" ],
+                    "size" : "107374182400",
+                    "bootable" : true,
+                    "imagelist" : "/oracle/public/OL_6.8_UEKR4_x86_64",
+                    "imagelist_entry" : 2
+                }   
+            ]
+        }
+    ]
+}

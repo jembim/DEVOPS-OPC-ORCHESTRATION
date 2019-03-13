@@ -1,0 +1,47 @@
+{
+    "user": "/Compute-{{ identity_domain }}/{{ opc_username }}",
+    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Master",
+    "description": "Master Orchestration that binds Volume,Network and Instance Orchestrations",
+    "oplans": [
+        {
+            "label": "instances-orchestration",
+            "obj_type": "orchestration",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Instance"
+                }
+            ]
+        },
+        {
+            "label": "network-orchestration",
+            "obj_type": "orchestration",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Network"
+                }
+            ]
+        },
+        {
+            "label": "storage-orchestration",
+            "obj_type": "orchestration",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Storage"
+                }
+            ]
+        }
+    ],
+    
+     "relationships": [
+        {
+            "oplan": "instances-orchestration",
+            "to_oplan": "network-orchestration",
+            "type": "depends"
+        },
+        {
+            "oplan": "instances-orchestration",
+            "to_oplan": "storage-orchestration",
+            "type": "depends"
+        }
+    ]
+}

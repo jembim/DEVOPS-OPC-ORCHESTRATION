@@ -1,0 +1,96 @@
+{
+    "user" : "/Compute-{{ identity_domain }}/{{ opc_username }}",
+    "name" : "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Instance",
+    "description" : "Orchestration Plan for Instances",
+    "oplans" : [
+        {
+            "label": "Instance",
+            "obj_type": "launchplan",
+            "ha_policy": "active",
+            "objects": [
+                {
+                    "instances": [
+                        {
+                            "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/{{ devops_instance_name }}",
+                            "label": "InstanceSN2",
+                            "imagelist": "/oracle/public/OL_6.8_UEKR4_x86_64",
+                            "shape": "oc2m",
+                            "sshkeys": [ "/Compute-{{ identity_domain }}/{{ opc_username }}/{{ ssh_key }}" ],
+                            "boot_order" : [1],
+                            "storage_attachments" : [
+                                {
+                                    "index" : 1,
+                                    "volume" : "/Compute-{{ identity_domain }}/{{ opc_username }}/BootStorageSN2"
+                                }
+                            ],
+                            "networking" : {
+                                "eth0" : {
+                                    "seclists" : [ "/Compute-{{ identity_domain }}/{{ opc_username }}/SeclistSN2" ],
+                                    "nat" : "ipreservation:/Compute-{{ identity_domain }}/{{ opc_username }}/ipresSN2"
+                                }
+                            },
+                            "attributes": {
+				                "userdata": {
+				                    "package_upgrade": true,
+                                    "pre-bootstrap": {
+                                        "failonerror": true,
+							             "script": [
+                                            "#!/bin/bash\n",
+                                            "yum update -y && yum install -y git wget\n",
+											"wget http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm\n",
+											"rpm -ivh epel-release-6-8.noarch.rpm\n",
+                                            "printf '[dockerrepo] \nname=Docker Repository \nbaseurl=https://yum.dockerproject.org/repo/main/oraclelinux/6 \nenabled=1 \ngpgcheck=1 \ngpgkey=https://yum.dockerproject.org/gpg' > /etc/yum.repos.d/docker.repo\n",
+								            "until [[ $(rpm -qa docker-engine | wc -l) -gt 0 ]]; do yum -y install docker-engine; echo \"Waiting until docker is installed..\"; sleep 5; done\n",
+								            "service docker start\n",
+								            "chkconfig docker on\n",
+								            "curl -L https://github.com/docker/compose/releases/download/1.8.1/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose\n",
+								            "chmod +x /usr/local/bin/docker-compose && ln -sv /usr/local/bin/docker-compose /usr/bin/docker-compose\n",
+								            "mkdir /ebs && cd /ebs\n",
+								            "git clone https://github.com/jembim/ebs-docker-compose.git -b master\n",
+								            "chmod -R 700 /ebs/ebs-docker-compose\n",
+                                            "cd /ebs/ebs-docker-compose\n",
+											"mkdir -p conf/provider/oracle\n",
+											"export IP=$(hostname --ip-address)\n",
+											"export PUBLIC_IP=$(curl ifconfig.co)\n",
+											"export GIT_REPO=gitlab\n",
+                                            "export ADOP_HOME='/ebs/ebs-docker-compose'\n",
+                                            "export PUBLIC_IP=${PUBLIC_IP}\n",
+                                            "export TARGET_HOST=${IP}\n",
+											"export LOGSTASH_HOST=${IP}\n",
+											"export CUSTOM_NETWORK_NAME=adop-network\n",
+                                            "export ADOP_SMTP_ENABLED=true\n",
+                                            "export INITIAL_ADMIN_USER='{{ devops_username }}'\n",
+                                            "export INITIAL_ADMIN_PASSWORD_PLAIN='{{ devops_password }}'\n",
+											"export COMPOSE_OVERRIDES='-f docker-compose.yml -f compose/gitlab/docker-compose.yml -f compose/jenkins-aws-vars/docker-compose.yml -f compose/jenkins-ansible-slave/docker-compose.yml'\n",
+                                            "export VOLUME_OVERRIDES='-f etc/volumes/local/default.yml'\n",
+											"echo \"export ADOP_CLI_USER=${INITIAL_ADMIN_USER}\" > conf/provider/oracle/vars.sh\n",
+											"echo \"export ADOP_CLI_PASSWORD=${INITIAL_ADMIN_PASSWORD_PLAIN}\" >> conf/provider/oracle/vars.sh\n",
+											"echo \". /ebs/ebs-docker-compose/conf/provider/oracle/vars.sh\" >> ~/.bashrc\n",
+											"echo \". /ebs/ebs-docker-compose/platform.secrets.sh\" >> ~/.bashrc\n",
+											"echo \". /ebs/ebs-docker-compose/env.config.sh\" >> ~/.bashrc\n",
+                                            "source env.config.sh\n",
+											"source conf/provider/oracle/vars.sh\n",
+											"source credentials.generate.sh\n",
+											"docker network create ${CUSTOM_NETWORK_NAME}\n",
+											"docker-compose ${COMPOSE_OVERRIDES} ${VOLUME_OVERRIDES} pull\n",
+											"sleep 90\n",
+											"docker-compose ${COMPOSE_OVERRIDES} ${VOLUME_OVERRIDES} up -d ldap gitlab jenkins\n",
+											"sleep 90\n",
+											"sleep 30\n",
+                                            "docker-compose ${COMPOSE_OVERRIDES} ${VOLUME_OVERRIDES} up -d\n",
+											"sleep 90\n",
+											"sleep 30\n",
+											"./gitlab-load-platform\n",
+											"./adop target set -t http://${PUBLIC_IP} -u ${ADOP_CLI_USER} -p ${ADOP_CLI_PASSWORD}\n",
+											"source ./.adop/target\n"
+                                         ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

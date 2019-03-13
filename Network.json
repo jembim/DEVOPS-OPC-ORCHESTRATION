@@ -1,0 +1,83 @@
+{ 
+    "user": "/Compute-{{ identity_domain }}/{{ opc_username }}",
+    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SingleNodeDevOps_Network",
+    "description": "Orchestration Plan for Network",
+    "oplans": [ 
+        {
+            "label": "IP reservations",
+            "obj_type": "ip/reservation",
+            "objects": [ 
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/ipresSN2",
+                    "parentpool": "/oracle/public/ippool",
+                    "permanent": true
+                }
+            ]
+        },
+        {
+            "label": "Security List",
+            "obj_type": "seclist",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SeclistSN2"
+                }
+            ]
+        },
+        {
+            "label": "Security Rules",
+            "obj_type": "secrule",
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/HTTP_accessSN2",
+                    "application": "/oracle/public/http",
+                    "src_list": "seciplist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeciplistSN2",
+                    "dst_list": "seclist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeclistSN2",
+                    "action": "PERMIT"
+                },
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/HTTPS_accessSN2",
+                    "application": "/oracle/public/https",
+                    "src_list": "seciplist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeciplistSN2",
+                    "dst_list": "seclist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeclistSN2",
+                    "action": "PERMIT"
+                },
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SSH_accessSN2",
+                    "application": "/oracle/public/ssh",
+                    "src_list": "seciplist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeciplistSN2",
+                    "dst_list": "seclist:/Compute-{{ identity_domain }}/{{ opc_username }}/SeclistSN2",
+                    "action": "PERMIT"
+                }
+            ]
+        },
+        {
+            "label": "Security IP List",
+            "obj_type": "seciplist",  
+            "objects": [
+                {
+                    "name": "/Compute-{{ identity_domain }}/{{ opc_username }}/SeciplistSN2",
+                    "secipentries": ["0.0.0.0/0"]
+                }
+            ]
+        }
+        
+     ],
+    
+    "relationships": [
+        {
+            "oplan": "Security IP List",
+            "to_oplan": "Security List",
+            "type": "depends"
+        },
+        {
+            "oplan": "Security Rules",
+            "to_oplan": "Security IP List",
+            "type": "depends"
+        },
+        {
+            "oplan": "Security Rules",
+            "to_oplan": "IP reservations",
+            "type": "depends"
+        }
+    ]
+}
